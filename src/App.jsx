@@ -12,6 +12,7 @@ import TaskDetail from './pages/tasks/TaskDetail';
 import CreateTask from './pages/tasks/CreateTask';
 import TemplateList from './pages/templates/TemplateList';
 import UserList from './pages/users/UserList';
+import TerritoryList from './pages/territories/TerritoryList';
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
               <Route path="/tasks/:id" element={<TaskDetail />} />
               <Route path="/templates" element={<TemplateList />} />
               <Route path="/users" element={<UserList />} />
+              <Route path="/territories" element={<TerritoryList />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

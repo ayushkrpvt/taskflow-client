@@ -6,8 +6,9 @@ const navItems = [
   { to: '/',          label: 'Dashboard',  roles: ['super_admin','admin','hod','employee'] },
   { to: '/projects',  label: 'Projects',   roles: ['super_admin','admin','hod','employee'] },
   { to: '/tasks',     label: 'Tasks',      roles: ['super_admin','admin','hod','employee'] },
-  { to: '/templates', label: 'Templates',  roles: ['super_admin'] },
-  { to: '/users',     label: 'Users',      roles: ['super_admin'] },
+  { to: '/templates',   label: 'Templates',   roles: ['super_admin'] },
+  { to: '/users',       label: 'Users',       roles: ['super_admin'] },
+  { to: '/territories', label: 'Territories', roles: ['super_admin', 'admin'] },
 ];
 
 const ROLE_LABEL = {

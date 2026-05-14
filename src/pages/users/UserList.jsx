@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getUsers, createUser, updateUser, changePassword } from '../../api/users';
 import { getDepartments } from '../../api/departments';
+import { getUserTerritories, setUserTerritories } from '../../api/territories';
+import TerritorySelector from '../../components/TerritorySelector';
 
 const ROLE_BADGE = {
   super_admin: 'bg-red-100 text-red-700',
@@ -67,6 +69,38 @@ export default function UserList() {
   const [pwSuccess, setPwSuccess] = useState(false);
   const [pwError, setPwError] = useState('');
 
+  // Territories
+  const [territoryIds, setTerritoryIds] = useState([]);
+  const [addingTerritory, setAddingTerritory] = useState(false);
+  const [pendingTerritoryId, setPendingTerritoryId] = useState('');
+  const [terrSaveSuccess, setTerrSaveSuccess] = useState(false);
+  const [terrSaveError, setTerrSaveError] = useState('');
+
+  const { data: userTerritories = [] } = useQuery({
+    queryKey: ['user-territories', editUser?.id],
+    queryFn: () => getUserTerritories(editUser.id),
+    enabled: !!editUser,
+  });
+
+  useEffect(() => {
+    if (userTerritories.length > 0) {
+      setTerritoryIds(userTerritories.map(t => ({ id: t.id, name: t.name })));
+    }
+  }, [userTerritories]);
+
+  const territoriesMutation = useMutation({
+    mutationFn: ({ userId, ids }) => setUserTerritories(userId, ids),
+    onSuccess: () => {
+      setTerrSaveSuccess(true);
+      setTerrSaveError('');
+      setTimeout(() => setTerrSaveSuccess(false), 3000);
+    },
+    onError: (err) => {
+      setTerrSaveError(err.response?.data?.message || 'Failed to save territories');
+      setTerrSaveSuccess(false);
+    },
+  });
+
   const setC = (k) => (e) => setCreateForm(f => ({ ...f, [k]: e.target.value }));
   const setE = (k) => (e) => setEditForm(f => ({ ...f, [k]: e.target.value }));
 
@@ -104,6 +138,11 @@ export default function UserList() {
     setNewPassword('');
     setPwSuccess(false);
     setPwError('');
+    setTerritoryIds([]);
+    setAddingTerritory(false);
+    setPendingTerritoryId('');
+    setTerrSaveSuccess(false);
+    setTerrSaveError('');
   }
 
   function handleToggleActive(u) {
@@ -282,6 +321,76 @@ export default function UserList() {
                   </button>
                 </div>
               </div>
+
+              {/* Territories (employees only) */}
+              {editForm.role === 'employee' && (
+                <div className="pt-4 border-t border-gray-100">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Territories</p>
+                  {terrSaveError && <div className="bg-red-50 text-red-700 text-xs rounded-lg p-2 mb-2">{terrSaveError}</div>}
+                  {terrSaveSuccess && <div className="bg-green-50 text-green-700 text-xs rounded-lg p-2 mb-2">Territories saved</div>}
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {territoryIds.map(t => (
+                      <span key={t.id} className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                        {t.name}
+                        <button
+                          onClick={() => setTerritoryIds(prev => prev.filter(x => x.id !== t.id))}
+                          className="hover:text-red-500 leading-none"
+                        >×</button>
+                      </span>
+                    ))}
+                    {territoryIds.length === 0 && !addingTerritory && (
+                      <span className="text-xs text-gray-400">No territories assigned</span>
+                    )}
+                  </div>
+                  {addingTerritory ? (
+                    <div className="space-y-2">
+                      <TerritorySelector
+                        value={pendingTerritoryId}
+                        onChange={id => setPendingTerritoryId(id)}
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            if (!pendingTerritoryId) return;
+                            const alreadyAdded = territoryIds.find(t => t.id === pendingTerritoryId);
+                            if (!alreadyAdded) {
+                              const found = userTerritories.find(t => t.id === pendingTerritoryId);
+                              const name = found?.name || `Territory ${pendingTerritoryId}`;
+                              setTerritoryIds(prev => [...prev, { id: pendingTerritoryId, name }]);
+                            }
+                            setAddingTerritory(false);
+                            setPendingTerritoryId('');
+                          }}
+                          disabled={!pendingTerritoryId}
+                          className="text-xs bg-primary text-brand-dark px-3 py-1 rounded-lg hover:bg-brand-green disabled:opacity-50"
+                        >
+                          Add
+                        </button>
+                        <button
+                          onClick={() => { setAddingTerritory(false); setPendingTerritoryId(''); }}
+                          className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setAddingTerritory(true)}
+                      className="text-xs text-primary hover:text-brand-green px-2 py-1 rounded hover:bg-gray-50"
+                    >
+                      + Add Territory
+                    </button>
+                  )}
+                  <button
+                    onClick={() => territoriesMutation.mutate({ userId: editUser.id, ids: territoryIds.map(t => t.id) })}
+                    disabled={territoriesMutation.isPending}
+                    className="mt-3 block text-xs bg-gray-800 text-white px-4 py-1.5 rounded-lg hover:bg-gray-700 disabled:opacity-50"
+                  >
+                    {territoriesMutation.isPending ? 'Saving…' : 'Save Territories'}
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 px-6 py-4 border-t border-gray-100">

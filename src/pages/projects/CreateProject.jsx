@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { createProject } from '../../api/projects';
 import { getTemplates } from '../../api/templates';
+import TerritorySelector from '../../components/TerritorySelector';
 
 export default function CreateProject() {
   const navigate = useNavigate();
   const { data: templates = [] } = useQuery({ queryKey: ['templates'], queryFn: getTemplates });
 
-  const [form, setForm] = useState({ name: '', description: '', template_id: '', start_date: '', expected_end_date: '' });
+  const [form, setForm] = useState({ name: '', description: '', template_id: '', territory_id: '', start_date: '', expected_end_date: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -16,12 +17,14 @@ export default function CreateProject() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!form.territory_id) return setError('Territory is required');
     setError('');
     setLoading(true);
     try {
       const data = await createProject({
         ...form,
         template_id: form.template_id || null,
+        territory_id: form.territory_id || null,
       });
       navigate(`/projects/${data.id}`);
     } catch (err) {
@@ -55,6 +58,14 @@ export default function CreateProject() {
             <option value="">No template</option>
             {templates.map(t => <option key={t.id} value={t.id}>{t.name} ({t.task_count} tasks)</option>)}
           </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Territory *</label>
+          <TerritorySelector
+            value={form.territory_id}
+            onChange={(id) => setForm(f => ({ ...f, territory_id: id }))}
+            required
+          />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>

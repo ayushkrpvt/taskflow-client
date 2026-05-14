@@ -14,6 +14,7 @@ function buildTree(flat) {
 }
 
 const NEXT_TYPE = { country: 'state', state: 'zone', zone: 'city' };
+const EXTRA_TYPE = { state: 'city' }; // allow adding city directly under state
 const TYPE_LABEL = { country: 'Country', state: 'State', zone: 'Zone', city: 'City' };
 const TYPE_COLOR = {
   country: 'bg-blue-100 text-blue-700',
@@ -104,6 +105,14 @@ export default function TerritoryList() {
               className="text-xs text-primary hover:text-brand-green px-2 py-0.5 rounded hover:bg-gray-100"
             >
               + Add {TYPE_LABEL[NEXT_TYPE[node.type]]}
+            </button>
+          )}
+          {EXTRA_TYPE[node.type] && (
+            <button
+              onClick={() => { setAddingUnder({ parent_id: node.id, type: EXTRA_TYPE[node.type] }); setNewName(''); setAddError(''); }}
+              className="text-xs text-gray-400 hover:text-green-600 px-2 py-0.5 rounded hover:bg-gray-100"
+            >
+              + Add {TYPE_LABEL[EXTRA_TYPE[node.type]]}
             </button>
           )}
           <button
